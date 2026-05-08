@@ -1,0 +1,102 @@
+\<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portland Creative Xchange Network</title>
+    <!-- Welcome Modal -->
+    <div class="modal-backdrop" id="welcome-modal">
+      <div class="modal">
+        <button class="modal-close" id="modal-close">×</button>
+        <h2 class="modal-title">
+          Welcome to the Portland Creative Xchange Network!
+        </h2>
+
+        <p class="modal-body">
+          We are so glad you are here! This map is a living, growing portrait of
+          Portland's creative economy. Our data is a work in progress and
+          intentionally imperfect. You will find many listings with incomplete
+          or unverified information. We invite our community to help us build
+          something more accurate and representative of the creative fabric of
+          our city.
+        </p>
+
+        <p class="modal-body">
+          If you find your enterprise on the map, we'd love your help completing
+          or correcting your listing. If you don't see yourself, please add your
+          business so we can include you.
+        </p>
+
+        <h3 class="modal-subtitle">About Our Data Structure</h3>
+        <p class="modal-body">
+          We're using the data taxonomy developed by the New England Foundation
+          for the Arts through their
+          <a href="https://www.creativeground.org" target="_blank"
+            >CreativeGround</a
+          >
+          project. Their definitions for
+          <a
+            href="https://www.creativeground.org/institutionbusiness-type-definitions"
+            target="_blank"
+            >business types</a
+          >
+          and
+          <a
+            href="https://www.creativeground.org/activities-and-services-definitions"
+            target="_blank"
+            >activities and services</a
+          >
+          are the standards we reference for organizing our directory.
+        </p>
+
+        <button class="modal-button" id="modal-got-it">Got It</button>
+      </div>
+    </div>
+    <!-- Mapbox GL JS -->
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Header -->
+    <header>
+      <div class="header-title">Portland Creative Xchange Network</div>
+      <a
+        class="header-cta"
+        href="https://airtable.com/appRU0PaWuoADSbJv/paghsljxDjaHPjacX/form"
+        target="_blank"
+        >Add or Edit Your Business Information</a
+      >
+    </header>
+
+    <!-- App Layout -->
+    <div class="app">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <div class="result-count" id="result-count">Loading...</div>
+          <div class="filters" id="filters"></div>
+          <div id="business-type-filter"></div>
+        </div>
+        <div class="listings" id="listings"></div>
+      </div>
+
+      <!-- Map -->
+      <div id="map"></div>
+    </div>
+
+    <!-- Neighborhood Tooltip -->
+    <div class="neighborhood-tooltip" id="neighborhood-tooltip"></div>
+
+    <script src="map.js"></script>
+  </body>
+</html>
