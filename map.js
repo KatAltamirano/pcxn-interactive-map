@@ -92,16 +92,21 @@ const BUSINESS_TYPE_GROUPS = {
   Unclassified: [],
 };
 
-// Business type → color mapping (expand as needed)
+// Business type → color mapping
 const TYPE_COLORS = {
-  "Creation/Production": "#FF5B9C", // pink
-  "Distribution (Creative Entity)": "#FF8C42", // orange
-  "Distribution (Related Entity)": "#FFC93C", // bright marigold
-  "Education/Training": "#60b47d", // lime green
-  "Support (Creative Entity)": "#5da6fe", // sky blue
-  "Support (Related Entity)": "#C77DFF", // lavender
-  Unclassified: "#B5A99E", // warm gray
+  "Creation/Production": "#FF5B9C",
+  "Distribution (Creative Entity)": "#FF8C42",
+  "Distribution (Related Entity)": "#FFC93C",
+  "Education/Training": "#60b47d",
+  "Support (Creative Entity)": "#5da6fe",
+  "Support (Related Entity)": "#C77DFF",
+  Unclassified: "#B5A99E",
 };
+function colorForType(type) {
+  return TYPE_COLORS[type] || TYPE_COLORS["Unclassified"];
+}
+
+let selectedPCXNID = null;
 
 // ── MAP INIT ──────────────────────────────────────────────────────
 const map = new mapboxgl.Map({
@@ -133,7 +138,7 @@ map.on("load", () => {
     source: "neighborhoods",
     "source-layer": HOOD_LAYER,
     paint: {
-      "fill-color": "#4A6741",
+      "fill-color": "#e69dccec",
       "fill-opacity": 0.06,
     },
   });
@@ -144,7 +149,7 @@ map.on("load", () => {
     source: "neighborhoods",
     "source-layer": HOOD_LAYER,
     paint: {
-      "line-color": "#4A6741",
+      "line-color": "#d63a93",
       "line-width": 1,
       "line-opacity": 0.4,
     },
@@ -156,7 +161,7 @@ map.on("load", () => {
     source: "neighborhoods",
     "source-layer": HOOD_LAYER,
     paint: {
-      "fill-color": "#4A6741",
+      "fill-color": "#864663",
       "fill-opacity": [
         "case",
         ["boolean", ["feature-state", "hover"], false],
@@ -165,7 +170,62 @@ map.on("load", () => {
       ],
     },
   });
+  // ── COUNTY BOUNDARIES ───────────────────────────────────────────
+  map.addSource("counties", {
+    type: "vector",
+    url: "mapbox://altamiranok2.33ot66gd",
+  });
 
+  map.addLayer({
+    id: "counties-line",
+    type: "line",
+    source: "counties",
+    "source-layer": "BLM_OR_County_Boundaries_Poly-1wtoil",
+    layout: { visibility: "none" },
+    paint: {
+      "line-color": "#3c4d71",
+      "line-width": 1,
+      "line-opacity": 0.5,
+    },
+  });
+
+  // ── METRO BOUNDARY ──────────────────────────────────────────────
+  map.addSource("metro", {
+    type: "vector",
+    url: "mapbox://altamiranok2.bol77rav",
+  });
+
+  map.addLayer({
+    id: "metro-line",
+    type: "line",
+    source: "metro",
+    "source-layer": "Metro_Boundary-991jfx",
+    layout: { visibility: "none" },
+    paint: {
+      "line-color": "#343790",
+      "line-width": 2,
+      "line-opacity": 0.7,
+    },
+  });
+
+  // ── CITY LIMITS ─────────────────────────────────────────────────
+  map.addSource("cities", {
+    type: "vector",
+    url: "mapbox://altamiranok2.bwu3gyn8",
+  });
+
+  map.addLayer({
+    id: "cities-line",
+    type: "line",
+    source: "cities",
+    "source-layer": "City_Limits-3h18fk",
+    layout: { visibility: "none" },
+    paint: {
+      "line-color": "#6A9BB8",
+      "line-width": 1,
+      "line-opacity": 0.5,
+    },
+  });
   // ── Creative businesses points ──────────────────────────────────
   map.addSource("businesses", {
     type: "vector",
@@ -182,23 +242,36 @@ map.on("load", () => {
       "circle-color": [
         "match",
         ["get", "Business Type Classified"],
-        "Creation/Production",
-        "#FF5B9C",
-        "Distribution (Creative Entity)",
-        "#FF8C42",
-        "Distribution (Related Entity)",
-        "#FFC93C",
-        "Education/Training",
-        "#5FCC85",
-        "Support (Creative Entity)",
-        "#C77DFF",
-        "Support (Related Entity)",
-        "#5FA8FF",
-        "#B5A99E",
+        ...Object.entries(TYPE_COLORS).flatMap(([k, v]) =>
+          k === "Unclassified" ? [] : [k, v],
+        ),
+        TYPE_COLORS["Unclassified"], // default for empty or unmatched
       ],
       "circle-opacity": 0.85,
       "circle-stroke-width": 0.5,
       "circle-stroke-color": "white",
+    },
+  });
+
+  // ── BUSINESS LABELS ─────────────────────────────────────────────
+  map.addLayer({
+    id: "businesses-labels",
+    type: "symbol",
+    source: "businesses",
+    "source-layer": POINTS_LAYER,
+    minzoom: 13, // labels only appear when zoomed in past 13
+    layout: {
+      "text-field": ["get", "Display Name"],
+      "text-font": ["DIN Pro Regular", "Arial Unicode MS Regular"],
+      "text-size": 11,
+      "text-offset": [0, -1.1],
+      "text-anchor": "bottom",
+      "text-optional": true,
+      "text-allow-overlap": false,
+    },
+    paint: {
+      "text-color": "#2B2520",
+      "text-halo-width": 1.5,
     },
   });
 
@@ -207,6 +280,8 @@ map.on("load", () => {
     calculateTypeCounts();
     updateSidebar();
   });
+
+  setupSearch();
 
   // ── Neighborhood hover ──────────────────────────────────────────
   let hoveredHoodId = null;
@@ -309,10 +384,13 @@ map.on("load", () => {
     hoverPopup = new mapboxgl.Popup({
       closeButton: false,
       closeOnClick: false,
-      offset: 10,
+      offset: 12,
+      anchor: "bottom",
     })
       .setLngLat(e.lngLat)
-      .setHTML(`<div class="popup-name">${name}</div>`)
+      .setHTML(
+        `<div class="popup-name"><span class="popup-dot" style="background:${colorForType(props["Business Type Classified"] || "Unclassified")}"></span>${name}</div>`,
+      )
       .addTo(map);
   });
 
@@ -323,6 +401,33 @@ map.on("load", () => {
       hoverPopup = null;
     }
   });
+  // ── INTERACTIVE LEGEND ──────────────────────────────────────────
+  // ── INTERACTIVE LEGEND ──────────────────────────────────────────
+  document
+    .querySelectorAll("#map-legend input[type=checkbox]")
+    .forEach((box) => {
+      box.addEventListener("change", (e) => {
+        const layerId = e.target.dataset.layer;
+        const visibility = e.target.checked ? "visible" : "none";
+        map.setLayoutProperty(layerId, "visibility", visibility);
+      });
+    });
+
+  const legendToggle = document.getElementById("legend-toggle");
+  const legendBody = document.getElementById("legend-body");
+
+  legendToggle.addEventListener("click", () => {
+    legendBody.classList.toggle("collapsed");
+    legendToggle.classList.toggle("collapsed");
+  });
+});
+
+document.addEventListener("click", (e) => {
+  const legend = document.getElementById("map-legend");
+  if (!legend.contains(e.target)) {
+    document.getElementById("legend-body").classList.add("collapsed");
+    document.getElementById("legend-toggle").classList.add("collapsed");
+  }
 });
 
 // ── POPUP ─────────────────────────────────────────────────────────
@@ -330,27 +435,38 @@ function showPopup(lngLat, props) {
   if (activePopup) activePopup.remove();
 
   const name = props["Display Name"] || props["Display.Name"] || "Unknown";
-  const type =
-    props["Primary_Business_Type"] || props["Primary Business Type"] || "";
-  const website = props["Website"] || "";
-  const source = props["Source"] || "";
-  const sector = props["Sector_Original"] || props["Sector..Original."] || "";
+  const classified = props["Business Type Classified"] || "Unclassified";
+  const dotColor = colorForType(classified);
 
-  const websiteHTML = website
-    ? `<a class="popup-link" href="${website}" target="_blank">Visit Website →</a>`
-    : `<a class="popup-link" href="${FORM_LINK}" target="_blank">Claim This Listing →</a>`;
+  selectedPCXNID = props["PCXN ID"] || null;
+  if (selectedPCXNID) {
+    map.setFilter("businesses-labels", [
+      "!=",
+      ["get", "PCXN ID"],
+      selectedPCXNID,
+    ]);
+  }
 
   const html = `
-  <div class="popup-name">${name}</div>
+  <div class="popup-name">
+    <span class="popup-dot" style="background:${dotColor}"></span>${name}
+  </div>
 `;
 
   activePopup = new mapboxgl.Popup({
     closeButton: true,
     maxWidth: "280px",
+    offset: 12,
+    anchor: "bottom", // popup's bottom edge sits at the point
   })
     .setLngLat(lngLat)
     .setHTML(html)
     .addTo(map);
+
+  activePopup.on("close", () => {
+    selectedPCXNID = null;
+    map.setFilter("businesses-labels", null);
+  });
 }
 
 // ── SIDEBAR ───────────────────────────────────────────────────────
@@ -405,8 +521,14 @@ function buildBusinessTypeFilter() {
     const header = document.createElement("button");
     header.className = "filter-group-header";
     const groupCount = typeCounts.groups[group] || 0;
-    header.textContent = `${group} (${groupCount})`;
+    const groupColor = colorForType(group);
+
+    header.innerHTML = `
+  <span class="group-dot" style="background:${groupColor}"></span>
+  <span class="group-label">${group} (${groupCount})</span>
+`;
     header.classList.toggle("active", activeTypeFilter === group);
+    header.style.setProperty("--group-color", groupColor);
 
     // Type list — hidden by default
     const typeList = document.createElement("div");
@@ -456,9 +578,17 @@ function buildBusinessTypeFilter() {
     types.forEach((type) => {
       const typeEl = document.createElement("button");
       typeEl.className = "filter-type-item";
+      const groupColor = colorForType(group);
+      typeEl.style.backgroundColor = `${groupColor}22`; // 22 = ~13% opacity
+      typeEl.style.borderColor = `${groupColor}88`; // 88 = ~53% opacity
+      typeEl.style.color = "#3a3a3a";
       const typeCount = typeCounts.types[type] || 0;
       typeEl.textContent = `${type} (${typeCount})`;
       typeEl.classList.toggle("active", activeTypeFilter === type);
+      if (activeTypeFilter === type) {
+        typeEl.style.backgroundColor = groupColor;
+        typeEl.style.color = "white";
+      }
 
       typeEl.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -581,19 +711,20 @@ function renderListings(features) {
 
     // Only show the three summary fields
     item.innerHTML = `
-    <div class="listing-name">${name}</div>
-    <div class="listing-type">${classifiedType || "Unclassified"}</div>    ${discipline ? `<div class="listing-discipline">${discipline}</div>` : ""}
-    <div class="listing-detail ${id === selectedListingId ? "open" : ""}" id="detail-${id}">
-    <div class="detail-row">
-    <span class="detail-key">Business Type</span>
-    <span class="detail-value">${primaryType || '<em class="empty">Not yet classified</em>'}</span>  </div>
-    <div class="detail-row">
-    <span class="detail-key">Primary Discipline</span>
-    <span class="detail-value">${discipline || '<em class="empty">Not yet classified</em>'}</span>
-    </div>
-    <div class="detail-row">
-    <span class="detail-key">Subdisciplines</span>
-    <span class="detail-value">
+      <div class="listing-name">${name}</div>
+      <div class="listing-type" style="background-color: ${colorForType(classifiedType)}22; border: 1px solid ${colorForType(classifiedType)}88; color: #3a3a3a;">${classifiedType || "Unclassified"}</div>     ${discipline ? `<div class="listing-discipline">${discipline}</div>` : ""}
+      <div class="listing-detail ${id === selectedListingId ? "open" : ""}" id="detail-${id}">
+      <div class="detail-row">
+      <span class="detail-key">Business Type</span>
+      <span class="detail-value">${primaryType || '<em class="empty">Not yet classified</em>'}</span>
+     </div>
+      <div class="detail-row">
+      <span class="detail-key">Primary Discipline</span>
+      <span class="detail-value">${discipline || '<em class="empty">Not yet classified</em>'}</span>
+      </div>
+      <div class="detail-row">
+      <span class="detail-key">Subdisciplines</span>
+      <span class="detail-value">
       ${
         subdisciplines
           ? `<div class="tag-chips">${subdisciplines
@@ -731,4 +862,59 @@ function turf_bbox(geometry) {
     [minX, minY],
     [maxX, maxY],
   ];
+}
+// ── SEARCH ────────────────────────────────────────────────────────
+function setupSearch() {
+  const input = document.getElementById("search-input");
+  const resultsBox = document.getElementById("search-results");
+
+  input.addEventListener("input", () => {
+    const query = input.value.trim().toLowerCase();
+    resultsBox.innerHTML = "";
+
+    if (query.length < 2) return;
+
+    // Search all features in the source, not just rendered
+    const all = map.querySourceFeatures("businesses", {
+      sourceLayer: POINTS_LAYER,
+    });
+
+    // Deduplicate and filter by name match
+    const seen = new Set();
+    const matches = [];
+    for (const f of all) {
+      const name = f.properties["Display Name"] || "";
+      const id = f.properties["PCXN ID"] || "";
+      if (seen.has(id)) continue;
+      if (name.toLowerCase().includes(query)) {
+        seen.add(id);
+        matches.push(f);
+      }
+      if (matches.length >= 8) break;
+    }
+
+    if (matches.length === 0) {
+      resultsBox.innerHTML = '<div class="search-empty">No matches</div>';
+      return;
+    }
+
+    matches.forEach((f) => {
+      const name = f.properties["Display Name"] || "Unknown";
+      const coords = f.geometry.coordinates;
+      const id = f.properties["PCXN ID"] || "";
+
+      const row = document.createElement("div");
+      row.className = "search-result";
+      row.textContent = name;
+      row.addEventListener("click", () => {
+        input.value = "";
+        resultsBox.innerHTML = "";
+        selectedListingId = id;
+        map.flyTo({ center: coords, zoom: 15, duration: 600 });
+        showPopup({ lng: coords[0], lat: coords[1] }, f.properties);
+        renderListings(allFeatures);
+      });
+      resultsBox.appendChild(row);
+    });
+  });
 }

@@ -69,7 +69,7 @@
   <body>
     <!-- Header -->
     <header>
-      <div class="header-title">Portland Creative Xchange Network</div>
+      <div class="header-title">PCXN | Portland Creative Xchange Network</div>
       <a
         class="header-cta"
         href="https://airtable.com/appRU0PaWuoADSbJv/paghsljxDjaHPjacX/form"
@@ -83,6 +83,15 @@
       <!-- Sidebar -->
       <div class="sidebar">
         <div class="sidebar-header">
+          <div class="search-wrap">
+            <input
+              type="text"
+              id="search-input"
+              placeholder="Search businesses..."
+              autocomplete="off"
+            />
+            <div class="search-results" id="search-results"></div>
+          </div>
           <div class="result-count" id="result-count">Loading...</div>
           <div class="filters" id="filters"></div>
           <div id="business-type-filter"></div>
@@ -92,6 +101,34 @@
 
       <!-- Map -->
       <div id="map"></div>
+    </div>
+    <div class="map-legend" id="map-legend">
+      <button class="legend-header collapsed" id="legend-toggle">
+        <span>Layers</span>
+        <span class="legend-arrow">▾</span>
+      </button>
+      <div class="legend-body collapsed" id="legend-body">
+        <label class="legend-item">
+          <input type="checkbox" data-layer="neighborhoods-fill" checked />
+          <span class="legend-swatch" style="background: #7bc48f"></span>
+          Neighborhoods
+        </label>
+        <label class="legend-item">
+          <input type="checkbox" data-layer="counties-line" />
+          <span class="legend-swatch" style="background: #8b4a6b"></span>
+          Counties
+        </label>
+        <label class="legend-item">
+          <input type="checkbox" data-layer="metro-line" />
+          <span class="legend-swatch" style="background: #e55a2b"></span>
+          Metro Boundary
+        </label>
+        <label class="legend-item">
+          <input type="checkbox" data-layer="cities-line" />
+          <span class="legend-swatch" style="background: #6a9bb8"></span>
+          City Limits
+        </label>
+      </div>
     </div>
 
     <!-- Neighborhood Tooltip -->
