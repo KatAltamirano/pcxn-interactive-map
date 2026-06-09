@@ -128,17 +128,17 @@ let selectedListingId = null;
 map.on("load", () => {
   // ── Neighborhood polygons ───────────────────────────────────────
   map.addSource("neighborhoods", {
-    type: "vector",
-    url: `mapbox://${HOOD_TILESET}`,
+    type: "geojson",
+    data: "neighborhoods.geojson",
+    generateId: true,
   });
 
   map.addLayer({
     id: "neighborhoods-fill",
     type: "fill",
     source: "neighborhoods",
-    "source-layer": HOOD_LAYER,
     paint: {
-      "fill-color": "#e69dccec",
+      "fill-color": "#e69dcc",
       "fill-opacity": 0.06,
     },
   });
@@ -147,7 +147,6 @@ map.on("load", () => {
     id: "neighborhoods-outline",
     type: "line",
     source: "neighborhoods",
-    "source-layer": HOOD_LAYER,
     paint: {
       "line-color": "#d63a93",
       "line-width": 1,
@@ -159,7 +158,6 @@ map.on("load", () => {
     id: "neighborhoods-hover",
     type: "fill",
     source: "neighborhoods",
-    "source-layer": HOOD_LAYER,
     paint: {
       "fill-color": "#864663",
       "fill-opacity": [
@@ -238,18 +236,38 @@ map.on("load", () => {
     source: "businesses",
     "source-layer": POINTS_LAYER,
     paint: {
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 4, 14, 7],
+      "circle-radius": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        9,
+        1.5,
+        11,
+        2.5,
+        13,
+        4,
+        15,
+        6,
+      ],
       "circle-color": [
         "match",
         ["get", "Business Type Classified"],
         ...Object.entries(TYPE_COLORS).flatMap(([k, v]) =>
           k === "Unclassified" ? [] : [k, v],
         ),
-        TYPE_COLORS["Unclassified"], // default for empty or unmatched
+        TYPE_COLORS["Unclassified"],
       ],
-      "circle-opacity": 0.85,
-      "circle-stroke-width": 0.5,
-      "circle-stroke-color": "white",
+      "circle-opacity": 0.35,
+      "circle-stroke-width": 1.5,
+      "circle-stroke-color": [
+        "match",
+        ["get", "Business Type Classified"],
+        ...Object.entries(TYPE_COLORS).flatMap(([k, v]) =>
+          k === "Unclassified" ? [] : [k, v],
+        ),
+        TYPE_COLORS["Unclassified"],
+      ],
+      "circle-stroke-opacity": 1,
     },
   });
 
@@ -298,7 +316,6 @@ map.on("load", () => {
         map.setFeatureState(
           {
             source: "neighborhoods",
-            sourceLayer: HOOD_LAYER,
             id: hoveredHoodId,
           },
           { hover: false },
@@ -308,7 +325,6 @@ map.on("load", () => {
       map.setFeatureState(
         {
           source: "neighborhoods",
-          sourceLayer: HOOD_LAYER,
           id: hoveredHoodId,
         },
         { hover: true },
@@ -317,8 +333,8 @@ map.on("load", () => {
       tooltip.style.left = mapRect.left + e.point.x + 12 + "px";
       tooltip.style.top = mapRect.top + e.point.y + 12 + "px";
       const name =
+        e.features[0].properties.MAPLABEL ||
         e.features[0].properties.NAME ||
-        e.features[0].properties.name ||
         "Neighborhood";
       tooltip.style.display = "block";
       tooltip.textContent = name;
@@ -332,7 +348,6 @@ map.on("load", () => {
       map.setFeatureState(
         {
           source: "neighborhoods",
-          sourceLayer: HOOD_LAYER,
           id: hoveredHoodId,
         },
         { hover: false },
