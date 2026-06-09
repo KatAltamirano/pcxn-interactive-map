@@ -112,8 +112,8 @@ let selectedPCXNID = null;
 const map = new mapboxgl.Map({
   container: "map",
   style: "mapbox://styles/mapbox/light-v11",
-  center: [-122.676, 45.523],
-  zoom: 11,
+  center: [-122.648, 45.524],
+  zoom: 11.95,
 });
 
 map.addControl(new mapboxgl.NavigationControl(), "top-right");
@@ -138,7 +138,7 @@ map.on("load", () => {
     type: "fill",
     source: "neighborhoods",
     paint: {
-      "fill-color": "#e69dcc",
+      "fill-color": "#73b4d9",
       "fill-opacity": 0.06,
     },
   });
@@ -148,9 +148,9 @@ map.on("load", () => {
     type: "line",
     source: "neighborhoods",
     paint: {
-      "line-color": "#d63a93",
-      "line-width": 1,
-      "line-opacity": 0.4,
+      "line-color": "#6d6962",
+      "line-width": 0.5,
+      "line-opacity": 0.2,
     },
   });
 
@@ -159,7 +159,7 @@ map.on("load", () => {
     type: "fill",
     source: "neighborhoods",
     paint: {
-      "fill-color": "#864663",
+      "fill-color": "#507f99",
       "fill-opacity": [
         "case",
         ["boolean", ["feature-state", "hover"], false],
@@ -168,6 +168,7 @@ map.on("load", () => {
       ],
     },
   });
+
   // ── COUNTY BOUNDARIES ───────────────────────────────────────────
   map.addSource("counties", {
     type: "vector",
@@ -240,14 +241,12 @@ map.on("load", () => {
         "interpolate",
         ["linear"],
         ["zoom"],
-        9,
-        1.5,
-        11,
-        2.5,
-        13,
-        4,
-        15,
-        6,
+        10,
+        0.75,
+        14,
+        2,
+        17,
+        3.5,
       ],
       "circle-color": [
         "match",
@@ -258,7 +257,7 @@ map.on("load", () => {
         TYPE_COLORS["Unclassified"],
       ],
       "circle-opacity": 0.35,
-      "circle-stroke-width": 1.5,
+      "circle-stroke-width": 1,
       "circle-stroke-color": [
         "match",
         ["get", "Business Type Classified"],
@@ -267,7 +266,7 @@ map.on("load", () => {
         ),
         TYPE_COLORS["Unclassified"],
       ],
-      "circle-stroke-opacity": 1,
+      "circle-stroke-opacity": 0.6,
     },
   });
 
@@ -277,19 +276,21 @@ map.on("load", () => {
     type: "symbol",
     source: "businesses",
     "source-layer": POINTS_LAYER,
-    minzoom: 13, // labels only appear when zoomed in past 13
+    minzoom: 14.5,
     layout: {
       "text-field": ["get", "Display Name"],
       "text-font": ["DIN Pro Regular", "Arial Unicode MS Regular"],
-      "text-size": 11,
+      "text-size": 14,
       "text-offset": [0, -1.1],
       "text-anchor": "bottom",
       "text-optional": true,
       "text-allow-overlap": false,
+      "text-padding": 6,
     },
     paint: {
-      "text-color": "#2B2520",
-      "text-halo-width": 1.5,
+      "text-color": "#464440",
+      "text-halo-color": "#464440",
+      "text-halo-width": 0.1,
     },
   });
 
@@ -306,39 +307,34 @@ map.on("load", () => {
   const tooltip = document.getElementById("neighborhood-tooltip");
 
   map.on("mousemove", "neighborhoods-fill", (e) => {
-    if (map.getZoom() > 11.5) {
-      tooltip.style.display = "none";
-      return;
-    }
     map.getCanvas().style.cursor = "pointer";
     if (e.features.length > 0) {
       if (hoveredHoodId !== null) {
         map.setFeatureState(
-          {
-            source: "neighborhoods",
-            id: hoveredHoodId,
-          },
+          { source: "neighborhoods", id: hoveredHoodId },
           { hover: false },
         );
       }
       hoveredHoodId = e.features[0].id;
       map.setFeatureState(
-        {
-          source: "neighborhoods",
-          id: hoveredHoodId,
-        },
+        { source: "neighborhoods", id: hoveredHoodId },
         { hover: true },
       );
-      const mapRect = map.getCanvas().getBoundingClientRect();
-      tooltip.style.left = mapRect.left + e.point.x + 12 + "px";
-      tooltip.style.top = mapRect.top + e.point.y + 12 + "px";
-      const name =
-        e.features[0].properties.MAPLABEL ||
-        e.features[0].properties.NAME ||
-        "Neighborhood";
-      tooltip.style.display = "block";
-      tooltip.textContent = name;
-      console.log("hovering id:", hoveredHoodId);
+
+      // Tooltip only shows when zoomed out; highlight always works
+      if (map.getZoom() > 13) {
+        tooltip.style.display = "none";
+      } else {
+        const mapRect = map.getCanvas().getBoundingClientRect();
+        tooltip.style.left = mapRect.left + e.point.x + 12 + "px";
+        tooltip.style.top = mapRect.top + e.point.y + 12 + "px";
+        const name =
+          e.features[0].properties.MAPLABEL ||
+          e.features[0].properties.NAME ||
+          "Neighborhood";
+        tooltip.style.display = "block";
+        tooltip.textContent = name;
+      }
     }
   });
 
@@ -355,14 +351,6 @@ map.on("load", () => {
     }
     hoveredHoodId = null;
     tooltip.style.display = "none";
-  });
-
-  // ── Neighborhood click → zoom ───────────────────────────────────
-  map.on("click", "neighborhoods-fill", (e) => {
-    if (e.features.length > 0) {
-      const bbox = turf_bbox(e.features[0].geometry);
-      map.fitBounds(bbox, { padding: 40, duration: 800 });
-    }
   });
 
   // ── Business point click → popup ────────────────────────────────
@@ -417,7 +405,6 @@ map.on("load", () => {
     }
   });
   // ── INTERACTIVE LEGEND ──────────────────────────────────────────
-  // ── INTERACTIVE LEGEND ──────────────────────────────────────────
   document
     .querySelectorAll("#map-legend input[type=checkbox]")
     .forEach((box) => {
@@ -469,7 +456,7 @@ function showPopup(lngLat, props) {
 `;
 
   activePopup = new mapboxgl.Popup({
-    closeButton: true,
+    closeButton: false,
     maxWidth: "280px",
     offset: 12,
     anchor: "bottom", // popup's bottom edge sits at the point
@@ -789,7 +776,6 @@ function renderListings(features) {
         selectedListingId = null;
       } else {
         selectedListingId = id;
-        map.flyTo({ center: coords, zoom: 15, duration: 600 });
         showPopup({ lng: coords[0], lat: coords[1] }, props);
       }
       renderListings(allFeatures);
