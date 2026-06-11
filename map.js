@@ -15,8 +15,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 mapboxgl.accessToken =
   "pk.eyJ1IjoiYWx0YW1pcmFub2syIiwiYSI6ImNtb2MzMzhzOTA4MHkycXE0Zmk5aG0zMmEifQ.BeyBfi3_gakB9akyJJQNjQ";
-const POINTS_TILESET = "altamiranok2.57dgc1ba"; // tileset ID.
-const POINTS_LAYER = "pcxn_map_data_0430-dny64l";
+const POINTS_TILESET = "altamiranok2.cp3x3391qaj7"; // tileset ID.
+const POINTS_LAYER = "34bdbfd5dc856387ce40";
 const HOOD_TILESET = "altamiranok2.dh00odk5"; // tileset ID
 const HOOD_LAYER = "Neighborhood_Boundaries-b864oj";
 const FORM_LINK =
@@ -242,9 +242,9 @@ map.on("load", () => {
         ["linear"],
         ["zoom"],
         10,
-        0.75,
+        1.2,
         14,
-        2,
+        2.2,
         17,
         3.5,
       ],
@@ -256,7 +256,7 @@ map.on("load", () => {
         ),
         TYPE_COLORS["Unclassified"],
       ],
-      "circle-opacity": 0.35,
+      "circle-opacity": 0.7,
       "circle-stroke-width": 1,
       "circle-stroke-color": [
         "match",
