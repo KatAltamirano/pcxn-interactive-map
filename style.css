@@ -28,6 +28,11 @@ body {
   overflow: hidden;
 }
 
+body {
+  margin: 0;
+  padding: 0;
+}
+
 /* ── Header ────────────────────────────────────────────────────── */
 header {
   position: fixed;
@@ -89,8 +94,11 @@ header {
 /* ── Layout ────────────────────────────────────────────────────── */
 .app {
   display: flex;
-  height: 100vh;
-  padding-top: var(--header-height);
+  position: fixed;
+  top: 80px;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 /* ── Sidebar ───────────────────────────────────────────────────── */
@@ -763,4 +771,28 @@ header {
   padding: 10px 12px;
   font-size: 0.8rem;
   color: #999;
+}
+
+.home-button {
+  position: absolute;
+  top: 151px;
+  right: 10px;
+  z-index: 5;
+  width: 29px;
+  height: 29px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #333;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+.home-button:hover {
+  background: #f0f0f0;
 }

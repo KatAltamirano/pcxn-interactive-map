@@ -116,7 +116,7 @@ const map = new mapboxgl.Map({
   zoom: 11.95,
 });
 
-map.addControl(new mapboxgl.NavigationControl(), "top-right");
+map.addControl(new mapboxgl.NavigationControl({ showCompass: false }));
 
 let allFeatures = [];
 let activeFilter = null;
@@ -124,6 +124,7 @@ let activePopup = null;
 let activeTypeFilter = null;
 let typeCounts = { groups: {}, types: {} };
 let selectedListingId = null;
+let neighborhoodData = null;
 
 map.on("load", () => {
   // ── Neighborhood polygons ───────────────────────────────────────
@@ -168,6 +169,12 @@ map.on("load", () => {
       ],
     },
   });
+
+  fetch("neighborhoods.geojson")
+    .then((res) => res.json())
+    .then((data) => {
+      neighborhoodData = data;
+    });
 
   // ── COUNTY BOUNDARIES ───────────────────────────────────────────
   map.addSource("counties", {
@@ -351,6 +358,31 @@ map.on("load", () => {
     }
     hoveredHoodId = null;
     tooltip.style.display = "none";
+  });
+
+  // ── Neighborhood click → zoom to neighborhood ─────────────────
+  map.on("click", "neighborhoods-fill", (e) => {
+    if (e.features.length > 0 && neighborhoodData) {
+      const clickedName = e.features[0].properties.MAPLABEL;
+
+      // Find the full feature in the raw GeoJSON by name
+      const fullFeature = neighborhoodData.features.find(
+        (f) => f.properties.MAPLABEL === clickedName,
+      );
+
+      if (fullFeature) {
+        const bbox = turf_bbox(fullFeature.geometry);
+        map.fitBounds(bbox, { padding: 40, duration: 800 });
+      }
+    }
+  });
+
+  document.getElementById("home-button").addEventListener("click", () => {
+    map.flyTo({
+      center: [-122.648, 45.524],
+      zoom: 11.95,
+      duration: 800,
+    });
   });
 
   // ── Business point click → popup ────────────────────────────────
