@@ -15,8 +15,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 mapboxgl.accessToken =
   "pk.eyJ1IjoiYWx0YW1pcmFub2syIiwiYSI6ImNtb2MzMzhzOTA4MHkycXE0Zmk5aG0zMmEifQ.BeyBfi3_gakB9akyJJQNjQ";
-const POINTS_TILESET = "altamiranok2.cp3x3391qaj7"; // tileset ID.
-const POINTS_LAYER = "34bdbfd5dc856387ce40";
+const POINTS_TILESET = "altamiranok2.06kf35ir5b42"; // tileset ID.
+const POINTS_LAYER = "2963ac55030b527711dc";
 const HOOD_TILESET = "altamiranok2.dh00odk5"; // tileset ID
 const HOOD_LAYER = "Neighborhood_Boundaries-b864oj";
 const FORM_LINK =
